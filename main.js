@@ -30,19 +30,22 @@ app.post(
 	(req, res, next) => {
 		/*        console.log(req.body.searchState) */
 		const prevSearches = JSON.parse(req.body.searchState);
-		console.log(prevSearches);
 		const filter = prevSearches.filter((s) => {
+            const cachedDate = Date.parse(s.date)
+            const thresholdDate = Date.parse(new Date()) -8.64e+7
 			if (
 				s.q == req.body.search &&
 				s.country == req.body.country &&
-				s.category == req.body.category
+                s.category == req.body.category &&
+                cachedDate >= thresholdDate
+                
 			) {
 				return s;
 			}
 		});
 
 		if (filter.length > 0) {
-			console.log("did this happen");
+			console.log("not fetching");
 			res.status(201);
 			res.type("text/html");
 			res.render("index", {
@@ -68,13 +71,14 @@ app.post(
 			const data = await result.json();
 
 			const articlesArr = data.articles;
-			console.log(data);
+			
 			prevSearches.push({
 				q: req.body.search,
 				country: req.body.country,
 				category: req.body.category,
 				fetchUrl,
-				articlesArr,
+                articlesArr,
+                date: new Date()
 			});
 			res.status(201);
 			res.type("text/html");
@@ -83,14 +87,7 @@ app.post(
 				articlesArr,
 				searchState: JSON.stringify(prevSearches),
 			});
-			/*   setTimeout(()=> {
-                console.log("too bad its gonan be deleted")
-                 res.render("index", {
-                     articlesArr,
-                     searchState: "[]"
-                 })
-    
-            },1000) */
+	
 		} catch (e) {
 			console.log(e);
 		}
