@@ -23,19 +23,16 @@ app.get("/", async (req, res) => {
 	res.render("index", { searchState: JSON.stringify(search) });
 });
 
-app.post(
+app.get(
 	"/submit",
-	express.urlencoded({ extended: true }),
-	express.json(),
 	(req, res, next) => {
-		/*        console.log(req.body.searchState) */
-		const prevSearches = JSON.parse(req.body.searchState);
+		const prevSearches = JSON.parse(req.query.searchState);
 		console.log(prevSearches);
 		const filter = prevSearches.filter((s) => {
 			if (
-				s.q == req.body.search &&
-				s.country == req.body.country &&
-				s.category == req.body.category
+				s.q == req.query.search &&
+				s.country == req.query.country &&
+				s.category == req.query.category
 			) {
 				return s;
 			}
@@ -56,12 +53,12 @@ app.post(
 	async (req, res) => {
 		console.log("we are fetching");
 		const fetchUrl = withQuery(NEWS_URL, {
-			q: req.body.search,
+			q: req.query.search,
 			/* apiKey: `${process.env.API_KEY}`, */
-			country: req.body.country,
-			category: req.body.category,
+			country: req.query.country,
+			category: req.query.category,
 		});
-		const prevSearches = JSON.parse(req.body.searchState);
+		const prevSearches = JSON.parse(req.query.searchState);
 
 		try {
 			const result = await fetch(fetchUrl, { headers });
@@ -70,9 +67,9 @@ app.post(
 			const articlesArr = data.articles;
 			console.log(data);
 			prevSearches.push({
-				q: req.body.search,
-				country: req.body.country,
-				category: req.body.category,
+				q: req.query.search,
+				country: req.query.country,
+				category: req.query.category,
 				fetchUrl,
 				articlesArr,
 			});
@@ -83,14 +80,6 @@ app.post(
 				articlesArr,
 				searchState: JSON.stringify(prevSearches),
 			});
-			/*   setTimeout(()=> {
-                console.log("too bad its gonan be deleted")
-                 res.render("index", {
-                     articlesArr,
-                     searchState: "[]"
-                 })
-    
-            },1000) */
 		} catch (e) {
 			console.log(e);
 		}
