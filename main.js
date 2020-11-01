@@ -29,17 +29,20 @@ app.get(
 		const prevSearches = JSON.parse(req.query.searchState);
 		console.log(prevSearches);
 		const filter = prevSearches.filter((s) => {
+            const cachedDate = Date.parse(s.date)
+            const thresholdDate = Date.parse(new Date()) -8.64e+7
 			if (
 				s.q == req.query.search &&
 				s.country == req.query.country &&
-				s.category == req.query.category
+				s.category == req.query.category &&
+				cachedDate >= thresholdDate
 			) {
 				return s;
 			}
 		});
 
 		if (filter.length > 0) {
-			console.log("did this happen");
+			console.log("not fetching");
 			res.status(201);
 			res.type("text/html");
 			res.render("index", {
@@ -65,13 +68,14 @@ app.get(
 			const data = await result.json();
 
 			const articlesArr = data.articles;
-			console.log(data);
+			
 			prevSearches.push({
 				q: req.query.search,
 				country: req.query.country,
 				category: req.query.category,
 				fetchUrl,
-				articlesArr,
+                articlesArr,
+                date: new Date()
 			});
 			res.status(201);
 			res.type("text/html");
