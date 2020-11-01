@@ -23,33 +23,28 @@ app.get("/", async (req, res) => {
 	res.render("index", { searchState: JSON.stringify(search) });
 });
 
-app.post(
+const cached = []
+
+app.get(
 	"/submit",
-	express.urlencoded({ extended: true }),
-	express.json(),
 	(req, res, next) => {
-		/*        console.log(req.body.searchState) */
-		const prevSearches = JSON.parse(req.body.searchState);
-		const filter = prevSearches.filter((s) => {
+		const filter = cached.filter((s) => {
             const cachedDate = Date.parse(s.date)
-            const thresholdDate = Date.parse(new Date()) -8.64e+7
+            const thresholdDate = Date.parse(new Date()) - 900000
 			if (
-				s.q == req.body.search &&
-				s.country == req.body.country &&
-                s.category == req.body.category &&
-                cachedDate >= thresholdDate
-                
+				s.q == req.query.search &&
+				s.country == req.query.country &&
+				s.category == req.query.category &&
+				cachedDate >= thresholdDate
 			) {
 				return s;
 			}
 		});
-
 		if (filter.length > 0) {
 			console.log("not fetching");
 			res.status(201);
 			res.type("text/html");
 			res.render("index", {
-				searchState: JSON.stringify(prevSearches),
 				articlesArr: filter[0].articlesArr,
 			});
 		} else {
@@ -59,23 +54,23 @@ app.post(
 	async (req, res) => {
 		console.log("we are fetching");
 		const fetchUrl = withQuery(NEWS_URL, {
-			q: req.body.search,
+			q: req.query.search,
 			/* apiKey: `${process.env.API_KEY}`, */
-			country: req.body.country,
-			category: req.body.category,
+			country: req.query.country,
+			category: req.query.category
 		});
-		const prevSearches = JSON.parse(req.body.searchState);
-
+		
 		try {
+			console.log("did we get to here")
 			const result = await fetch(fetchUrl, { headers });
 			const data = await result.json();
 
 			const articlesArr = data.articles;
 			
-			prevSearches.push({
-				q: req.body.search,
-				country: req.body.country,
-				category: req.body.category,
+			cached.push({
+				q: req.query.search,
+				country: req.query.country,
+				category: req.query.category,
 				fetchUrl,
                 articlesArr,
                 date: new Date()
@@ -84,10 +79,8 @@ app.post(
 			res.type("text/html");
 			console.log("we are rendering");
 			res.render("index", {
-				articlesArr,
-				searchState: JSON.stringify(prevSearches),
+				articlesArr
 			});
-	
 		} catch (e) {
 			console.log(e);
 		}
